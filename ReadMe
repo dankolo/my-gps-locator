@@ -1,5 +1,6 @@
 To build this tracker. 
 
+- You need to copy the "MainActivity.java" code in yours
 - You need to set up a db and a post service on a webpage (see g.php)
 - You can then follow your paths on google map with some little scripting
 
