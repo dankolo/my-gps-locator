@@ -171,7 +171,7 @@ public class MyLocationListener implements LocationListener
     		
     	    try {
     	    	
-    	    	saveCrop(android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss", new java.util.Date())+"-"+s+"/");
+    	    	saveCrop(android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss", new java.util.Date())+"--"+s+"/");
     	    	this.count++;
     	    	if(this.count>95)
     	    	{
