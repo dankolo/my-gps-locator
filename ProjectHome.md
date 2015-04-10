@@ -1,0 +1,1 @@
+Gps app that sends location trough http post. The goal is to track and record the user
